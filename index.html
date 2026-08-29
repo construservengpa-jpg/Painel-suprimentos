@@ -1267,6 +1267,16 @@ footer.appfoot{
           <button class="btn ghost" id="btnReloadBase">🔄 Recarregar do servidor</button>
           <button class="btn ghost" id="btnDemo">Carregar dados de exemplo</button>
         </div>
+        <div id="uploadProgressBox" style="display:none;margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-mut);margin-bottom:6px;">
+            <span id="uploadProgressLabel">Publicando…</span>
+            <span id="uploadProgressPct">0%</span>
+          </div>
+          <div style="height:8px;border-radius:5px;background:rgba(255,255,255,0.08);overflow:hidden;">
+            <div id="uploadProgressFill" style="height:100%;width:0%;background:var(--gold);transition:width .25s ease;border-radius:5px;"></div>
+          </div>
+          <div id="uploadProgressMsg" style="margin-top:8px;font-size:12.5px;"></div>
+        </div>
         <div class="status-line" id="statusLine" style="margin-top:12px;">
           <span><span class="status-dot" id="statusDot"></span><span id="statusText">Buscando relatório publicado no servidor…</span></span>
         </div>
@@ -2077,6 +2087,20 @@ function buildDemoRows(){
    ============================================================ */
 const state = { rows: [], sourceName: '' };
 
+// Extrai uma mensagem legível de um erro do Supabase/Postgrest (ou de um erro
+// genérico do JavaScript), para mostrar na tela em vez de "[object Object]".
+function describeSupabaseError(err){
+  if(!err) return 'erro desconhecido';
+  if(typeof err === 'string') return err;
+  const parts = [];
+  if(err.message) parts.push(err.message);
+  if(err.details) parts.push(err.details);
+  if(err.hint) parts.push(`dica: ${err.hint}`);
+  if(err.code) parts.push(`código ${err.code}`);
+  if(parts.length) return parts.join(' — ');
+  try{ return JSON.stringify(err); }catch(e){ return String(err); }
+}
+
 document.getElementById('fileInput').addEventListener('change', function(e){
   const file = e.target.files[0];
   if(!file) return;
@@ -2283,14 +2307,50 @@ async function reconnectRememberedFile(key, onFile){
 }
 
 async function fetchLatestRelatorio(){
-  const { data, error } = await window.SB
+  // Pega o lote (grupo) da importação mais recente...
+  const { data: ultimo, error: err1 } = await window.SB
     .from('relatorio_importacoes')
-    .select('dados,nome_arquivo,importado_em')
+    .select('lote,nome_arquivo,importado_em')
     .order('importado_em', { ascending:false })
     .limit(1)
     .maybeSingle();
-  if(error) throw error;
-  return data;
+  if(err1) throw err1;
+  if(!ultimo) return null;
+
+  // ...depois busca TODOS os pedaços desse lote e junta na ordem certa.
+  const { data: partes, error: err2 } = await window.SB
+    .from('relatorio_importacoes')
+    .select('id,dados')
+    .eq('lote', ultimo.lote)
+    .order('id', { ascending:true });
+  if(err2) throw err2;
+
+  const dados = (partes||[]).flatMap(p => Array.isArray(p.dados) ? p.dados : []);
+  return { dados, nome_arquivo: ultimo.nome_arquivo, importado_em: ultimo.importado_em };
+}
+
+// Publica um relatório grande em vários pedaços pequenos, em vez de um único
+// insert gigante — evita estourar limites de tempo/tamanho do servidor com
+// relatórios de dezenas de milhares de linhas.
+function setUploadProgress(opts){
+  const box = document.getElementById('uploadProgressBox');
+  const label = document.getElementById('uploadProgressLabel');
+  const pct = document.getElementById('uploadProgressPct');
+  const fill = document.getElementById('uploadProgressFill');
+  const msg = document.getElementById('uploadProgressMsg');
+  if(!box) return;
+  box.style.display = opts.hide ? 'none' : 'block';
+  if(opts.label !== undefined) label.textContent = opts.label;
+  if(opts.percent !== undefined){
+    const p = Math.round(opts.percent);
+    pct.textContent = `${p}%`;
+    fill.style.width = `${p}%`;
+    fill.style.background = opts.error ? 'var(--bad)' : 'var(--gold)';
+  }
+  if(opts.msg !== undefined){
+    msg.textContent = opts.msg;
+    msg.style.color = opts.error ? 'var(--bad)' : 'var(--good)';
+  }
 }
 
 async function publicarRelatorio(rawRows, nomeArquivo){
@@ -2299,16 +2359,51 @@ async function publicarRelatorio(rawRows, nomeArquivo){
     alert('Faça login como administrador para publicar um novo relatório.');
     return false;
   }
+  const CHUNK = 2000;
+  const lote = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2)));
+  const total = Math.max(1, Math.ceil(rawRows.length / CHUNK));
+  let enviados = 0;
+  setUploadProgress({ label:`Publicando "${nomeArquivo}"…`, percent:0, msg:'' });
   try{
-    const { error } = await window.SB.from('relatorio_importacoes').insert({
-      nome_arquivo: nomeArquivo,
-      dados: rawRows,
-      importado_por: session.user.id
+    for(let i=0;i<rawRows.length;i+=CHUNK){
+      const parte = Math.floor(i/CHUNK) + 1;
+      const chunk = rawRows.slice(i, i+CHUNK);
+      setUploadProgress({
+        label:`Publicando "${nomeArquivo}"… parte ${parte} de ${total}`,
+        percent: (enviados/rawRows.length)*100
+      });
+      const { error } = await window.SB.from('relatorio_importacoes').insert({
+        nome_arquivo: nomeArquivo,
+        dados: chunk,
+        lote: lote,
+        importado_por: session.user.id
+      });
+      if(error) throw error;
+      enviados += chunk.length;
+      setUploadProgress({ percent: (enviados/rawRows.length)*100 });
+    }
+
+    // Publicação concluída — apaga as importações anteriores para não
+    // acumular relatórios antigos no banco (o painel só usa o mais recente).
+    try{
+      await window.SB.from('relatorio_importacoes').delete().neq('lote', lote);
+    }catch(cleanupErr){
+      console.error('Falha ao limpar importações antigas (não crítico):', describeSupabaseError(cleanupErr));
+    }
+
+    setUploadProgress({
+      label: 'Publicação concluída',
+      percent: 100,
+      msg: `✔ ${rawRows.length.toLocaleString('pt-BR')} linha(s) publicada(s) com sucesso, em ${total} parte(s). Relatórios anteriores foram substituídos.`
     });
-    if(error) throw error;
     return true;
   }catch(err){
-    alert('Não foi possível publicar o relatório no servidor (é preciso estar logado como administrador).\n\n'+err.message);
+    setUploadProgress({
+      percent: (enviados/rawRows.length)*100,
+      error: true,
+      msg: `✖ Falha ao publicar: ${describeSupabaseError(err)}`
+    });
+    alert('Não foi possível publicar o relatório no servidor (é preciso estar logado como administrador).\n\n'+describeSupabaseError(err));
     return false;
   }
 }
@@ -2327,7 +2422,9 @@ async function autoLoadBaseDados(){
       return;
     }
   }catch(err){
-    console.error('Falha ao buscar relatório do servidor:', err);
+    console.error('Falha ao buscar relatório do servidor:', describeSupabaseError(err), err);
+    statusDot.classList.remove('ok');
+    statusText.textContent = `Falha ao falar com o servidor: ${describeSupabaseError(err)}`;
   }
 
   // Nenhum relatório publicado ainda (ou falha ao contatar o servidor) — usa
@@ -3580,9 +3677,9 @@ async function loadData(){
     records = (data||[]).map(rowFromDb);
     setStorageStatus('ok-cloud');
   }catch(e){
-    console.error('Falha ao carregar cotações do servidor:', e);
+    console.error('Falha ao carregar cotações do servidor:', describeSupabaseError(e), e);
     records = [];
-    setStorageStatus('error');
+    setStorageStatus('error', describeSupabaseError(e));
   }
 }
 
@@ -3648,14 +3745,14 @@ async function deleteAllRecords(){
   }
 }
 
-function setStorageStatus(state){
+function setStorageStatus(state, detail){
   const el = document.getElementById('cot-storageStatus');
   if(!el) return;
   if(state === 'ok-cloud'){
     el.textContent = 'Dados sincronizados com o servidor (Supabase)';
     el.style.color = 'var(--good)';
   } else if(state === 'error'){
-    el.textContent = 'Falha ao falar com o servidor — tente novamente';
+    el.textContent = detail ? `Falha ao falar com o servidor: ${detail}` : 'Falha ao falar com o servidor — tente novamente';
     el.style.color = 'var(--bad)';
   } else if(state === 'saving'){
     el.textContent = 'Sincronizando...';
