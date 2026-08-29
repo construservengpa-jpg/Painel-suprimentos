@@ -1273,7 +1273,7 @@ footer.appfoot{
             <span id="uploadProgressPct">0%</span>
           </div>
           <div style="height:8px;border-radius:5px;background:rgba(255,255,255,0.08);overflow:hidden;">
-            <div id="uploadProgressFill" style="height:100%;width:0%;background:var(--gold);transition:width .25s ease;border-radius:5px;"></div>
+            <div id="uploadProgressFill" style="height:100%;width:0%;background:var(--yellow);transition:width .25s ease;border-radius:5px;"></div>
           </div>
           <div id="uploadProgressMsg" style="margin-top:8px;font-size:12.5px;"></div>
         </div>
@@ -2345,11 +2345,11 @@ function setUploadProgress(opts){
     const p = Math.round(opts.percent);
     pct.textContent = `${p}%`;
     fill.style.width = `${p}%`;
-    fill.style.background = opts.error ? 'var(--bad)' : 'var(--gold)';
+    fill.style.background = opts.error ? 'var(--red)' : 'var(--yellow)';
   }
   if(opts.msg !== undefined){
     msg.textContent = opts.msg;
-    msg.style.color = opts.error ? 'var(--bad)' : 'var(--good)';
+    msg.style.color = opts.error ? 'var(--red)' : 'var(--teal)';
   }
 }
 
