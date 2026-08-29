@@ -182,6 +182,10 @@ nav.tabs{
   gap:4px;
   margin:22px 0 26px;
   border-bottom:1px solid var(--line);
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
 }
 .tab-btn{
   font-family:var(--font-display);
@@ -194,6 +198,8 @@ nav.tabs{
   cursor:pointer;
   position:relative;
   top:1px;
+  flex:none;
+  white-space:nowrap;
 }
 .tab-btn.active{color:var(--yellow);border-bottom:2px solid var(--yellow);}
 .tab-btn .count-pill{
@@ -456,6 +462,32 @@ select:focus,input:focus{outline:2px solid var(--yellow-dim);outline-offset:1px;
   #tab-prazoinsumos .pi-kanban{grid-template-columns:1fr;}
   .pi-cal-grid{grid-template-columns:repeat(7,minmax(32px,1fr));}
   .pi-present-overlay{padding:24px;}
+}
+
+/* ---- ajustes gerais para telas de celular ---- */
+@media (max-width:640px){
+  .app{padding:0 12px 60px;}
+  header.topbar{padding:18px 0 12px;gap:14px;}
+  h1.brand-title{font-size:24px;}
+  .brand-eyebrow{font-size:10px;}
+  .brand-sub{font-size:12.5px;max-width:none;}
+  header.topbar > div:last-child{width:100%;}
+  header.topbar .btn{width:100%;justify-content:center;}
+  nav.tabs{margin:16px 0 18px;}
+  .tab-btn{font-size:13px;padding:10px 12px;}
+  .kpi-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;}
+  .kpi-card{padding:12px 12px 10px;}
+  .filters-bar{padding:10px 12px;gap:8px;}
+  .filters-bar .field{min-width:120px;flex:1 1 120px;}
+  .section-head{flex-direction:column;align-items:flex-start !important;}
+  #authBox #authLoggedOut{flex-direction:column;align-items:stretch !important;}
+  #authBox #authLoggedOut input{width:100% !important;}
+  #authBox #authLoggedIn{flex-wrap:wrap;}
+  .import-panel{flex-direction:column;align-items:stretch;}
+  .import-panel .file-drop,.import-panel .btn{width:100%;justify-content:center;text-align:center;}
+  .form-card{padding:14px !important;}
+  #tab-cotacoes .cot-tab-btn{font-size:12px;padding:8px 10px;}
+  #tab-prazoinsumos .view-btn{font-size:12px;padding:8px 10px;}
 }
 
 /* ---- prazo lamp indicators ---- */
@@ -724,7 +756,7 @@ footer.appfoot{
     <div>
       <p class="brand-eyebrow">Suprimentos · Sienge</p>
       <h1 class="brand-title">Painel de Acompanhamento de Compras</h1>
-      <p class="brand-sub">O relatório é publicado no servidor por um administrador e fica disponível para consulta de qualquer pessoa. Cotações de insumos podem ser lançadas por qualquer usuário logado.</p>
+      <p class="brand-sub">O relatório é publicado no servidor por um administrador e fica disponível para consulta de qualquer pessoa. Preços de insumos críticos podem ser lançados por qualquer usuário logado.</p>
     </div>
     <div>
       <button class="btn primary" id="btnPrint">🖨 Emitir relatório</button>
@@ -736,7 +768,7 @@ footer.appfoot{
     <button class="tab-btn active" data-tab="overview">Visão Geral &amp; KPIs</button>
     <button class="tab-btn" data-tab="compradores">Solicitações por Comprador <span class="count-pill" id="countSolic">0</span></button>
     <button class="tab-btn" data-tab="centros">Pedidos por Centro de Custo <span class="count-pill" id="countPed">0</span></button>
-    <button class="tab-btn" data-tab="cotacoes">Cotações</button>
+    <button class="tab-btn" data-tab="cotacoes">Preço Insumos Críticos</button>
     <button class="tab-btn" data-tab="prazoinsumos">Prazo de Insumos Críticos <span class="count-pill" id="countPrazoInsumos">0</span></button>
     <button class="tab-btn" data-tab="admin">🔐 Administração</button>
   </nav>
@@ -933,9 +965,9 @@ footer.appfoot{
 
   <div class="cot-section-head" style="margin-bottom:18px;">
     <div>
-      <div class="eyebrow">Cotações</div>
-      <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600;margin:0;color:var(--text);">Cotações de insumos e fornecedores</h2>
-      <p style="color:var(--text-dim);font-size:13px;margin:6px 0 0;max-width:640px;">Registro e acompanhamento de preços de insumos por fornecedor e localidade, com histórico e menor cotação do dia.</p>
+      <div class="eyebrow">Preço Insumos Críticos</div>
+      <h2 style="font-family:var(--font-display);font-size:19px;font-weight:600;margin:0;color:var(--text);">Preço de Insumos Críticos e Fornecedores</h2>
+      <p style="color:var(--text-dim);font-size:13px;margin:6px 0 0;max-width:640px;">Registro e acompanhamento de preços de insumos por fornecedor e localidade, com histórico e menor preço do dia.</p>
     </div>
     <div style="text-align:right;">
       <div id="cot-storageStatus" style="font-size:11px;color:var(--text-dim);">Verificando armazenamento...</div>
@@ -945,7 +977,7 @@ footer.appfoot{
 
   <div class="cot-tabs" role="tablist">
     <button class="cot-tab-btn active" data-tab="config" role="tab">Configuração</button>
-    <button class="cot-tab-btn" data-tab="dashboard" role="tab">Melhor cotação e variação</button>
+    <button class="cot-tab-btn" data-tab="dashboard" role="tab">Melhor preço e variação</button>
     <button class="cot-tab-btn" data-tab="lancamento" role="tab">Lançamento</button>
     <button class="cot-tab-btn" data-tab="registros" role="tab">Registros armazenados</button>
     <button class="cot-tab-btn admin-only" data-tab="importexport" role="tab">Importação e exportação</button>
@@ -980,7 +1012,7 @@ footer.appfoot{
     <div class="section-head">
       <div>
         <div class="eyebrow">Menor preço do dia</div>
-        <h2>Melhor cotação por insumo e localidade</h2>
+        <h2>Melhor preço por insumo e localidade</h2>
       </div>
       <div class="toolbar">
         <select id="cot-dashLocal"><option value="">Todas as localidades</option></select>
@@ -1019,11 +1051,11 @@ footer.appfoot{
     <div class="section-head">
       <div>
         <div class="eyebrow">Novo registro</div>
-        <h2>Lançar cotação</h2>
+        <h2>Lançar preço</h2>
       </div>
     </div>
     <div class="form-card anon-only">
-      <p class="chart-sub">Faça login (canto superior direito) para lançar uma cotação. A leitura das cotações continua aberta para qualquer visitante.</p>
+      <p class="chart-sub">Faça login (canto superior direito) para lançar um preço. A leitura continua aberta para qualquer visitante.</p>
     </div>
     <div class="form-card logged-only">
       <div class="form-grid">
@@ -1040,7 +1072,7 @@ footer.appfoot{
       <datalist id="cot-dlUnidade"></datalist>
       <datalist id="cot-dlLocal"></datalist>
       <div style="font-size:11.5px;color:var(--text-faint);margin-bottom:12px;">Deixe o frete em 0,00 se a entrega não tiver custo adicional. O valor total (produto + frete) é calculado automaticamente.</div>
-      <button class="primary" id="cot-btnAdd">Salvar cotação</button>
+      <button class="primary" id="cot-btnAdd">Salvar preço</button>
       <span id="cot-formMsg" style="margin-left:10px;font-size:12px;color:var(--bad);"></span>
     </div>
   </div>
@@ -1293,7 +1325,7 @@ footer.appfoot{
 
   <div class="roadline thin"></div>
   <footer class="appfoot">
-    <span>Painel de Suprimentos · o relatório e as cotações ficam guardados em um banco de dados no servidor (Supabase), compartilhado entre todos que acessam este painel.</span>
+    <span>Painel de Suprimentos · o relatório e os preços de insumos críticos ficam guardados em um banco de dados no servidor (Supabase), compartilhado entre todos que acessam este painel.</span>
     <span id="footToday"></span>
   </footer>
 </div>
@@ -3694,7 +3726,7 @@ async function insertRecord(r){
     return rowFromDb(data);
   }catch(e){
     console.error('Falha ao salvar cotação:', e);
-    alert('Não foi possível salvar a cotação no servidor. Verifique se você está logado.');
+    alert('Não foi possível salvar o preço no servidor. Verifique se você está logado.');
     setStorageStatus('error');
     return null;
   }
@@ -3724,7 +3756,7 @@ async function deleteRecord(id){
     return true;
   }catch(e){
     console.error('Falha ao excluir cotação:', e);
-    alert('Não foi possível excluir — apenas administradores podem excluir cotações.');
+    alert('Não foi possível excluir — apenas administradores podem excluir preços.');
     setStorageStatus('error');
     return false;
   }
@@ -3848,7 +3880,7 @@ function renderDashboard(){
 
   if(upToDateRecords.length === 0){
     const localTxt = localFiltro ? ` em ${localFiltro}` : '';
-    grid.innerHTML = `<div class="empty-note">Nenhuma cotação registrada até ${fmtBRDate(dateVal)}${localTxt}.</div>`;
+    grid.innerHTML = `<div class="empty-note">Nenhum preço registrado até ${fmtBRDate(dateVal)}${localTxt}.</div>`;
     return;
   }
 
@@ -3892,7 +3924,7 @@ function renderDashboard(){
         const breakdown = r.frete > 0 ? `<span>Produto R$ ${fmtMoney(r.valor)} + frete R$ ${fmtMoney(r.frete)}</span>` : '';
         const desatualizado = r.data !== dateVal;
         const avisoData = desatualizado
-          ? `<span style="color:var(--bad);">Sem cotação em ${fmtBRDate(dateVal)} — último preço de ${fmtBRDate(r.data)}</span>`
+          ? `<span style="color:var(--bad);">Sem preço em ${fmtBRDate(dateVal)} — último preço de ${fmtBRDate(r.data)}</span>`
           : '';
         return `
         <div class="ticker-card${desatualizado ? ' is-outdated' : ''}">
@@ -4048,7 +4080,7 @@ function renderTable(){
   tbody.querySelectorAll('button.danger').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const id = btn.getAttribute('data-id');
-      if(!confirm('Excluir esta cotação para todo mundo?')) return;
+      if(!confirm('Excluir este preço para todo mundo?')) return;
       const ok = await deleteRecord(id);
       if(ok){
         records = records.filter(r=>r.id !== id);
@@ -4116,11 +4148,11 @@ function exportCSV(){
     `${fmtBRDate(r.data)};${r.fornecedor};${r.insumo};${r.unidade};${r.valor.toFixed(2).replace('.',',')};${(r.frete||0).toFixed(2).replace('.',',')};${calcTotal(r).toFixed(2).replace('.',',')};${r.local}`
   );
   const csv = [header, ...lines].join('\n');
-  downloadBlob('\uFEFF'+csv, 'cotacoes.csv', 'text/csv;charset=utf-8;');
+  downloadBlob('\uFEFF'+csv, 'preco_insumos_criticos.csv', 'text/csv;charset=utf-8;');
 }
 
 function exportJSON(){
-  downloadBlob(JSON.stringify(records, null, 2), 'cotacoes-backup.json', 'application/json;charset=utf-8;');
+  downloadBlob(JSON.stringify(records, null, 2), 'preco_insumos_criticos-backup.json', 'application/json;charset=utf-8;');
 }
 
 function makeId(){
@@ -4329,7 +4361,7 @@ async function addRecord(){
 
   const { data: { session } } = await window.SB.auth.getSession();
   if(!session){
-    msg.textContent = 'Faça login para lançar uma cotação.';
+    msg.textContent = 'Faça login para lançar um preço.';
     return;
   }
 
