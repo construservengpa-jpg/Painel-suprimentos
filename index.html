@@ -14,6 +14,65 @@
   const SUPABASE_URL = 'https://xuukjnpkltvgzjfgivnd.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_67e6uHmdZJw2MU6QRht-gg_Qw6fioLY';
   window.SB = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ============================================================
+     CLASSIFICAÇÃO DE INSUMO CRÍTICO (compartilhada entre os dois
+     painéis desta página — "Prazo de Insumos Críticos" e "Preço
+     Insumos Críticos").
+     Fica guardada na tabela "insumos_criticos" do Supabase, com
+     leitura aberta para qualquer visitante e escrita restrita a
+     administradores (ver perfis.is_admin, igual às demais tabelas).
+     Cada regra tem uma palavra-chave (casada como palavra inteira,
+     ignorando acentos/maiúsculas na descrição + grupo do insumo) e um
+     rótulo. Uma "exceção" opcional cancela o casamento (ex.: a regra
+     "CAP" também bateria em "CAP PVC", que nada tem a ver com CAP
+     asfáltico — a exceção "PVC" evita esse falso positivo). Entre
+     várias regras, vence a primeira que casar, na ordem definida pelo
+     campo "ordem". Esta lista substitui por completo a antiga
+     detecção fixa no código (CAP asfalto/Emulsão/Diesel via regex). */
+  window.CRITICOS_RULES = [];
+
+  function normalizeCriticoText(s){
+    return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+  }
+  function escapeRegExp(s){
+    return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  }
+
+  window.loadCriticosRules = async function(){
+    try{
+      const { data, error } = await window.SB.from('insumos_criticos').select('*').order('ordem', { ascending:true });
+      if(error) throw error;
+      window.CRITICOS_RULES = data || [];
+    }catch(e){
+      console.error('Falha ao carregar classificação de insumo crítico:', e);
+      window.CRITICOS_RULES = [];
+    }
+    return window.CRITICOS_RULES;
+  };
+
+  // Aplica as regras carregadas a um texto (normalmente descrição + grupo
+  // do insumo) e devolve o rótulo do material crítico correspondente, ou
+  // null se nenhuma regra casar.
+  window.classificarMaterialCritico = function(materialTextRaw){
+    const materialText = normalizeCriticoText(materialTextRaw);
+    for(const regra of (window.CRITICOS_RULES||[])){
+      if(!regra.palavra_chave) continue;
+      const palavra = normalizeCriticoText(regra.palavra_chave);
+      if(!palavra) continue;
+      const re = new RegExp('\\b'+escapeRegExp(palavra)+'\\b');
+      if(!re.test(materialText)) continue;
+      if(regra.excecao){
+        const exc = normalizeCriticoText(regra.excecao);
+        if(exc){
+          const reExc = new RegExp('\\b'+escapeRegExp(exc)+'\\b');
+          if(reExc.test(materialText)) continue;
+        }
+      }
+      return regra.rotulo;
+    }
+    return null;
+  };
 </script>
 <style>
 :root{
@@ -1003,6 +1062,40 @@ footer.appfoot{
         </table>
       </div>
       <div style="font-size:11.5px;color:var(--text-faint);margin-top:9px;line-height:1.5;">Classificação fixa definida no código do painel (não editável por aqui). O dashboard abaixo agrupa automaticamente por esse tipo quando definido.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Classificação editável</div>
+        <h2>Classificação de insumo crítico</h2>
+      </div>
+      <div class="toolbar">
+        <span class="count-badge" id="crit-countBadge">verificando...</span>
+        <button class="ghost" id="crit-btnToggle">Minimizar</button>
+      </div>
+    </div>
+    <div id="crit-content">
+      <p style="font-size:12px;color:var(--text-mut);margin:0 0 14px;max-width:680px;line-height:1.5;">Define quais insumos contam como <strong>material crítico</strong> na aba "Prazo de Insumos Críticos" e nos indicadores relacionados (ex.: CAP asfalto, Emulsão, Diesel). Uma regra casa quando a palavra-chave aparece na descrição ou no grupo do insumo (ignorando acentos e maiúsculas/minúsculas); a exceção, se preenchida, cancela o casamento — útil para falsos positivos (ex.: palavra-chave "CAP" com exceção "PVC", para não confundir CAP asfáltico com capa de PVC). Quando mais de uma regra casa, vence a de menor número na coluna "Ordem". Guardado no banco de dados (Supabase), compartilhado entre todos que acessam este painel.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ordem</th><th>Palavra-chave</th><th>Exceção</th><th>Rótulo exibido</th><th class="admin-only"></th></tr></thead>
+          <tbody id="crit-tableBody"></tbody>
+        </table>
+      </div>
+      <div class="form-card admin-only" style="margin-top:14px;">
+        <div class="form-grid">
+          <div class="form-field"><label>Ordem</label><input type="number" id="crit-fOrdem" step="1" placeholder="0"></div>
+          <div class="form-field"><label>Palavra-chave</label><input type="text" id="crit-fPalavra" placeholder="Ex.: CAP"></div>
+          <div class="form-field"><label>Exceção (opcional)</label><input type="text" id="crit-fExcecao" placeholder="Ex.: PVC"></div>
+          <div class="form-field"><label>Rótulo exibido</label><input type="text" id="crit-fRotulo" placeholder="Ex.: CAP asfalto"></div>
+        </div>
+        <button class="primary" id="crit-btnAdd">Adicionar regra</button>
+        <span id="crit-formMsg" style="margin-left:10px;font-size:12px;color:var(--bad);"></span>
+      </div>
+      <div class="logged-non-admin-only" style="font-size:11.5px;color:var(--text-faint);margin-top:10px;">Somente administradores podem editar esta classificação.</div>
+      <div class="anon-only" style="font-size:11.5px;color:var(--text-faint);margin-top:10px;">Faça login como administrador (canto superior direito) para editar esta classificação.</div>
     </div>
   </div>
   </div>
@@ -2059,18 +2152,13 @@ function classify(raw){
   r.saldoEsperado = saldoEsperado;
   r.saldoDivergente = r.temPedido && Math.abs(saldoEsperado - r.saldoNum) > SALDO_EPSILON;
 
-  const materialText = ((raw.descricaoInsumo||'')+' '+(raw.grupoInsumo||''))
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
-  let material = null;
-  // ajuste 10: "CAP" sozinho também aparece em insumos que nada têm a ver com
-  // CAP asfáltico (confirmado: "55 - CAP PVC", uma capa/tampa de PVC usada em
-  // tubulação, não o ligante asfáltico). Antes de classificar como material
-  // crítico, exclui esses falsos positivos conhecidos.
-  const capNaoAsfaltico = /\bPVC\b/.test(materialText);
-  if(/\bCAP\b/.test(materialText) && !capNaoAsfaltico) material='CAP asfalto';
-  else if(/EMULS/.test(materialText)) material='EMULSÃO';
-  else if(/DIESEL/.test(materialText)) material='DIESEL';
-  r.materialCritico = material;
+  // ajuste 15: a classificação de material crítico deixou de ser fixa no
+  // código (antes: CAP asfalto/Emulsão/Diesel detectados por regex) e passou
+  // a vir da tabela "insumos_criticos" no Supabase, editável por
+  // administradores na aba "Preço Insumos Críticos → Configuração". Ver
+  // window.classificarMaterialCritico, definido no <head> da página.
+  const materialText = (raw.descricaoInsumo||'')+' '+(raw.grupoInsumo||'');
+  r.materialCritico = window.classificarMaterialCritico ? window.classificarMaterialCritico(materialText) : null;
 
   r.obraLabel = normLabel(raw.obra) || '(sem obra)';
   r.compradorDistribuidoLabel = normLabel(raw.compradorDistribuido) || '(não atribuído)';
@@ -2489,6 +2577,20 @@ function loadRows(rawRows, sourceName){
   populateFilterOptions();
   renderAll();
 }
+
+// Permite que a aba "Preço Insumos Críticos → Configuração" force a
+// reclassificação dos dados já carregados assim que um administrador
+// adiciona, edita ou remove uma regra de material crítico — sem precisar
+// reimportar o relatório do Sienge.
+window.reclassificarMateriaisCriticos = function(){
+  if(!state.rows || !state.rows.length) return;
+  state.rows.forEach(function(r){
+    const materialText = (r.descricaoInsumo||'')+' '+(r.grupoInsumo||'');
+    r.materialCritico = window.classificarMaterialCritico ? window.classificarMaterialCritico(materialText) : null;
+  });
+  populateFilterOptions();
+  renderAll();
+};
 
 // ajuste 9 (cont.) — segunda camada de proteção: cobre o caso raro em que,
 // por causa de algum outro campo do relatório (não a situação do pedido, já
@@ -3612,7 +3714,7 @@ document.getElementById('btnCollapsePed').addEventListener('click', ()=>setAllGr
    ============================================================ */
 document.getElementById('footToday').textContent = 'Referência de datas: hoje = ' + fmtDate(new Date());
 renderAll();
-autoLoadBaseDados();
+window.loadCriticosRules().then(autoLoadBaseDados);
 </script>
 <script>
 (function(){
@@ -3625,9 +3727,11 @@ let insumoTipos = Object.freeze({
   // Exemplo: 'Diesel S10': 'Combustível',
 });
 let tiposColapsado = false;
+let criticosColapsado = false;
 const STORE_KEY = 'cotacoes_registros';
 const TIPOS_KEY = 'cotacoes_tipos_insumo';
 const TIPOS_COLAPSO_KEY = 'cotacoes_tipos_colapsado';
+const CRITICOS_COLAPSO_KEY = 'insumos_criticos_colapsado';
 const ABA_ATIVA_KEY = 'cotacoes_aba_ativa';
 let abaAtiva = 'config';
 
@@ -3813,6 +3917,125 @@ async function toggleTiposColapso(){
   tiposColapsado = !tiposColapsado;
   applyTiposColapso();
   await storageSet(TIPOS_COLAPSO_KEY, tiposColapsado ? 'true' : 'false');
+}
+
+/* ============================================================
+   CLASSIFICAÇÃO DE INSUMO CRÍTICO (regras editáveis, admin)
+   ============================================================
+   As regras em si (window.CRITICOS_RULES) são carregadas e aplicadas por
+   funções globais definidas no <head> da página (compartilhadas com o
+   painel "Prazo de Insumos Críticos"). Aqui só cuidamos da tela de
+   administração: listar, adicionar e excluir regras, e do estado local de
+   "minimizado" do painel. */
+
+async function loadCriticosColapso(){
+  const res = await storageGet(CRITICOS_COLAPSO_KEY);
+  criticosColapsado = !!(res.ok && res.value === 'true');
+}
+
+function applyCriticosColapso(){
+  const content = document.getElementById('crit-content');
+  const btn = document.getElementById('crit-btnToggle');
+  if(!content || !btn) return;
+  content.style.display = criticosColapsado ? 'none' : '';
+  btn.textContent = criticosColapsado ? 'Maximizar' : 'Minimizar';
+}
+
+async function toggleCriticosColapso(){
+  criticosColapsado = !criticosColapsado;
+  applyCriticosColapso();
+  await storageSet(CRITICOS_COLAPSO_KEY, criticosColapsado ? 'true' : 'false');
+}
+
+async function addCriticoRule(){
+  const msg = document.getElementById('crit-formMsg');
+  const ordemRaw = document.getElementById('crit-fOrdem').value;
+  const palavra = document.getElementById('crit-fPalavra').value.trim();
+  const excecao = document.getElementById('crit-fExcecao').value.trim();
+  const rotulo = document.getElementById('crit-fRotulo').value.trim();
+
+  if(!palavra || !rotulo){
+    msg.textContent = 'Preencha ao menos a palavra-chave e o rótulo.';
+    return;
+  }
+  const ordem = ordemRaw === '' ? 0 : parseInt(ordemRaw, 10);
+  if(isNaN(ordem)){
+    msg.textContent = 'Informe uma ordem numérica válida (ou deixe em branco).';
+    return;
+  }
+  msg.textContent = '';
+
+  const { data: { session } } = await window.SB.auth.getSession();
+  if(!session){
+    msg.textContent = 'Faça login como administrador para adicionar uma regra.';
+    return;
+  }
+
+  try{
+    const { data, error } = await window.SB.from('insumos_criticos')
+      .insert({ ordem, palavra_chave: palavra, excecao: excecao || null, rotulo })
+      .select().single();
+    if(error) throw error;
+    window.CRITICOS_RULES.push(data);
+    window.CRITICOS_RULES.sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+  }catch(e){
+    console.error('Falha ao adicionar regra de material crítico:', e);
+    msg.textContent = 'Não foi possível salvar — verifique se você está logado como administrador.';
+    return;
+  }
+
+  document.getElementById('crit-fOrdem').value = '';
+  document.getElementById('crit-fPalavra').value = '';
+  document.getElementById('crit-fExcecao').value = '';
+  document.getElementById('crit-fRotulo').value = '';
+
+  renderCriticosTable();
+  if(window.reclassificarMateriaisCriticos) window.reclassificarMateriaisCriticos();
+}
+
+async function deleteCriticoRule(id){
+  try{
+    const { error } = await window.SB.from('insumos_criticos').delete().eq('id', id);
+    if(error) throw error;
+  }catch(e){
+    console.error('Falha ao excluir regra de material crítico:', e);
+    alert('Não foi possível excluir — apenas administradores podem excluir regras.');
+    return;
+  }
+  window.CRITICOS_RULES = window.CRITICOS_RULES.filter(r=>r.id !== id);
+  renderCriticosTable();
+  if(window.reclassificarMateriaisCriticos) window.reclassificarMateriaisCriticos();
+}
+
+function renderCriticosTable(){
+  const regras = window.CRITICOS_RULES || [];
+  const tbody = document.getElementById('crit-tableBody');
+  if(!tbody) return;
+
+  if(regras.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:20px;">Nenhuma regra cadastrada — nenhum insumo será marcado como crítico até que um administrador adicione ao menos uma regra.</td></tr>`;
+  } else {
+    tbody.innerHTML = regras.map(r=>`
+      <tr>
+        <td>${esc(r.ordem)}</td>
+        <td class="txt">${esc(r.palavra_chave)}</td>
+        <td class="txt">${r.excecao ? esc(r.excecao) : '<span style="color:var(--text-faint);">—</span>'}</td>
+        <td class="txt">${esc(r.rotulo)}</td>
+        <td><button class="danger admin-only" data-id="${r.id}">Excluir</button></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('crit-countBadge').textContent = regras.length === 0
+    ? 'nenhuma regra'
+    : `${regras.length} regra(s)`;
+
+  tbody.querySelectorAll('button.danger').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.getAttribute('data-id');
+      if(!confirm('Excluir esta regra de material crítico para todo mundo?')) return;
+      await deleteCriticoRule(id);
+    });
+  });
 }
 
 function setActiveTab(tab){
@@ -4126,6 +4349,7 @@ function renderTiposTable(){
 function renderAll(){
   updateDatalists();
   renderTiposTable();
+  renderCriticosTable();
   renderDashboard();
   renderChart();
   renderTable();
@@ -4387,12 +4611,17 @@ async function init(){
   await loadData();
   await loadTipos();
   await loadTiposColapso();
+  await window.loadCriticosRules();
+  await loadCriticosColapso();
   await loadAbaAtiva();
   renderAll();
   applyTiposColapso();
+  applyCriticosColapso();
   setActiveTab(abaAtiva);
 
   document.getElementById('cot-btnToggleTipos').addEventListener('click', toggleTiposColapso);
+  document.getElementById('crit-btnToggle').addEventListener('click', toggleCriticosColapso);
+  document.getElementById('crit-btnAdd').addEventListener('click', addCriticoRule);
   document.querySelectorAll('.cot-tab-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> goToTab(btn.getAttribute('data-tab')));
   });
