@@ -1046,7 +1046,7 @@ footer.appfoot{
   <div class="section">
     <div class="section-head">
       <div>
-        <div class="eyebrow">Classificação fixa</div>
+        <div class="eyebrow">Agrupamento automático</div>
         <h2>Classificação de insumos por tipo</h2>
       </div>
       <div class="toolbar">
@@ -1061,7 +1061,7 @@ footer.appfoot{
           <tbody id="cot-tiposBody"></tbody>
         </table>
       </div>
-      <div style="font-size:11.5px;color:var(--text-faint);margin-top:9px;line-height:1.5;">Classificação fixa definida no código do painel (não editável por aqui). O dashboard abaixo agrupa automaticamente por esse tipo quando definido.</div>
+      <div style="font-size:11.5px;color:var(--text-faint);margin-top:9px;line-height:1.5;">Este agrupamento usa a mesma classificação de "material crítico" definida logo abaixo, em "Classificação de insumo crítico" (editável por administradores). Insumos que não casam com nenhuma regra aparecem como "não classificado" e caem em "Sem classificação" no dashboard.</div>
     </div>
   </div>
 
@@ -3720,12 +3720,16 @@ window.loadCriticosRules().then(autoLoadBaseDados);
 (function(){
 let records = [];
 let chart = null;
-let insumoTipos = Object.freeze({
-  // Classificação fixa: nome do insumo (exatamente como lançado) -> tipo.
-  // Edite esta lista diretamente no código para adicionar classificações;
-  // não é mais editável pela interface.
-  // Exemplo: 'Diesel S10': 'Combustível',
-});
+// ajuste 16: a antiga classificação fixa "insumoTipos" (nome do insumo ->
+// tipo) ficava sempre vazia — era editável só no código e nunca chegou a
+// ser preenchida, então todo insumo caía em "Sem classificação" no
+// dashboard "Melhor preço e variação". Agora o agrupamento por tipo usa a
+// MESMA lista de regras de material crítico (window.CRITICOS_RULES,
+// editável por administradores em "Configuração → Classificação de
+// insumo crítico") como fonte única de classificação.
+function tipoDoInsumo(insumo){
+  return (window.classificarMaterialCritico && window.classificarMaterialCritico(insumo)) || '';
+}
 let tiposColapsado = false;
 let criticosColapsado = false;
 const STORE_KEY = 'cotacoes_registros';
@@ -3897,7 +3901,8 @@ function setStorageStatus(state, detail){
 }
 
 async function loadTipos(){
-  // Classificação fixa (ver constante insumoTipos acima) — nada a carregar.
+  // Nada a carregar: o agrupamento por tipo usa window.CRITICOS_RULES,
+  // já carregado por window.loadCriticosRules() no init().
 }
 
 async function loadTiposColapso(){
@@ -4125,7 +4130,7 @@ function renderDashboard(){
 
   const porTipo = {};
   insumos.forEach(insumo=>{
-    const tipo = insumoTipos[insumo] || TIPO_SEM;
+    const tipo = tipoDoInsumo(insumo) || TIPO_SEM;
     if(!porTipo[tipo]) porTipo[tipo] = [];
     porTipo[tipo].push(insumo);
   });
@@ -4331,7 +4336,7 @@ function renderTiposTable(){
     tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;color:var(--text-faint);padding:20px;">Nenhum insumo lançado ainda.</td></tr>`;
   } else {
     tbody.innerHTML = insumos.map(insumo=>{
-      const tipo = insumoTipos[insumo] || '';
+      const tipo = tipoDoInsumo(insumo);
       return `
       <tr>
         <td class="txt">${insumo}</td>
@@ -4340,7 +4345,7 @@ function renderTiposTable(){
     }).join('');
   }
 
-  const semClassificar = insumos.filter(i=>!insumoTipos[i]).length;
+  const semClassificar = insumos.filter(i=>!tipoDoInsumo(i)).length;
   document.getElementById('cot-tiposCountBadge').textContent = insumos.length === 0
     ? 'nenhum insumo'
     : (semClassificar > 0 ? `${semClassificar} de ${insumos.length} sem tipo` : `${insumos.length} insumo(s) classificado(s)`);
