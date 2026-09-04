@@ -163,6 +163,14 @@ body.is-admin .logged-non-admin-only{ display:none !important; }
 body:not(.is-logged) .logged-non-admin-only{ display:none !important; }
 .anon-only{ display:block; }
 body.is-logged .anon-only{ display:none !important; }
+/* Controle de Crédito: visível para admin e supervisor (ambos podem lançar
+   crédito e vincular pedido); exclusão continua restrita a admin via .admin-only. */
+.gestor-credito-only{ display:none !important; }
+body.is-admin .gestor-credito-only, body.is-supervisor .gestor-credito-only{ display:inline-block !important; }
+body.is-admin .section.gestor-credito-only, body.is-supervisor .section.gestor-credito-only{ display:block !important; }
+.logged-non-gestor-only{ display:block; }
+body.is-admin .logged-non-gestor-only, body.is-supervisor .logged-non-gestor-only{ display:none !important; }
+body:not(.is-logged) .logged-non-gestor-only{ display:none !important; }
 .file-drop{
   position:relative;
   display:flex;
@@ -238,13 +246,10 @@ body.is-logged .anon-only{ display:none !important; }
 /* ---- tabs ---- */
 nav.tabs{
   display:flex;
+  flex-wrap:wrap;
   gap:4px;
   margin:22px 0 26px;
   border-bottom:1px solid var(--line);
-  overflow-x:auto;
-  overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:thin;
 }
 .tab-btn{
   font-family:var(--font-display);
@@ -274,6 +279,37 @@ nav.tabs{
 
 section.tab-panel{display:none;}
 section.tab-panel.active{display:block;}
+
+/* ---- Nav groups (menu + submenu) ---- */
+.nav-group{position:relative;display:inline-flex;flex:none;}
+.nav-group-btn{display:inline-flex;align-items:center;}
+.nav-caret{font-size:9px;margin-left:6px;opacity:0.6;position:relative;top:-1px;}
+.nav-submenu{
+  display:none;
+  position:absolute;
+  top:calc(100% + 1px);
+  left:0;
+  flex-direction:column;
+  min-width:260px;
+  background:var(--surface,#1c2028);
+  border:1px solid var(--line);
+  border-radius:0 6px 6px 6px;
+  box-shadow:0 10px 28px rgba(0,0,0,0.4);
+  z-index:80;
+  padding:4px;
+}
+.nav-group.open .nav-submenu,
+.nav-group:hover .nav-submenu{display:flex;}
+.nav-submenu .tab-btn{
+  width:100%;
+  text-align:left;
+  padding:10px 14px;
+  top:0;
+  border-radius:4px;
+}
+.nav-submenu .tab-btn.active{border-bottom:none;background:rgba(245,196,51,0.1);}
+.nav-submenu .tab-btn:hover{background:rgba(255,255,255,0.05);}
+.nav-group.group-active>.nav-group-btn{color:var(--yellow);border-bottom:2px solid var(--yellow);}
 
 /* ---- KPI grid : mile-marker cards ---- */
 .kpi-grid{
@@ -727,10 +763,10 @@ footer.appfoot{
 
 #tab-cotacoes *{box-sizing:border-box;}
 
-#tab-cotacoes .section{margin-bottom:36px;}
-#tab-cotacoes .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
-#tab-cotacoes .section-head h2{font-family:var(--font-display);font-size:19px;font-weight:600;margin:0;}
-#tab-cotacoes .section-head .eyebrow{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:600;}
+#tab-cotacoes .section, #tab-creditos .section{margin-bottom:36px;}
+#tab-cotacoes .section-head, #tab-creditos .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+#tab-cotacoes .section-head h2, #tab-creditos .section-head h2{font-family:var(--font-display);font-size:19px;font-weight:600;margin:0;}
+#tab-cotacoes .section-head .eyebrow, #tab-creditos .section-head .eyebrow{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:600;}
 
 #tab-cotacoes input[type=date], #tab-cotacoes input[type=text], #tab-cotacoes input[type=number], #tab-cotacoes select{
   background:var(--surface-2);border:1px solid var(--line);color:var(--text);
@@ -776,28 +812,28 @@ footer.appfoot{
 #tab-cotacoes .local-tag{font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--gold);margin-bottom:8px;}
 
 /* form */
-#tab-cotacoes .form-card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;}
-#tab-cotacoes .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px;}
-#tab-cotacoes .form-field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-mut);margin-bottom:5px;}
-#tab-cotacoes .form-field input, #tab-cotacoes .form-field select{width:100%;}
+#tab-cotacoes .form-card, #tab-creditos .form-card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;}
+#tab-cotacoes .form-grid, #tab-creditos .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px;}
+#tab-cotacoes .form-field label, #tab-creditos .form-field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-mut);margin-bottom:5px;}
+#tab-cotacoes .form-field input, #tab-cotacoes .form-field select, #tab-creditos .form-field input, #tab-creditos .form-field select{width:100%;}
 
 /* table */
-#tab-cotacoes .table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
-#tab-cotacoes table{width:100%;border-collapse:collapse;font-size:13px;}
-#tab-cotacoes thead th{background:var(--surface-2);text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-mut);border-bottom:1px solid var(--line);}
-#tab-cotacoes tbody td{padding:9px 12px;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12.5px;}
-#tab-cotacoes tbody td.txt{font-family:var(--font-body);}
-#tab-cotacoes tbody tr:last-child td{border-bottom:none;}
-#tab-cotacoes tbody tr:hover{background:rgba(255,255,255,0.02);}
+#tab-cotacoes .table-wrap, #tab-creditos .table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+#tab-cotacoes table, #tab-creditos table{width:100%;border-collapse:collapse;font-size:13px;}
+#tab-cotacoes thead th, #tab-creditos thead th{background:var(--surface-2);text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-mut);border-bottom:1px solid var(--line);}
+#tab-cotacoes tbody td, #tab-creditos tbody td{padding:9px 12px;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12.5px;}
+#tab-cotacoes tbody td.txt, #tab-creditos tbody td.txt{font-family:var(--font-body);}
+#tab-cotacoes tbody tr:last-child td, #tab-creditos tbody tr:last-child td{border-bottom:none;}
+#tab-cotacoes tbody tr:hover, #tab-creditos tbody tr:hover{background:rgba(255,255,255,0.02);}
 #tab-cotacoes tbody tr.is-min td.price-cell{color:var(--good);font-weight:600;}
 
-#tab-cotacoes .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+#tab-cotacoes .toolbar, #tab-creditos .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
 #tab-cotacoes .cot-chart-card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:20px;}
 #tab-cotacoes .stat-row{display:flex;gap:22px;margin-top:14px;flex-wrap:wrap;}
 #tab-cotacoes .stat{font-size:12px;color:var(--text-mut);}
 #tab-cotacoes .stat b{display:block;font-family:var(--font-mono);font-size:16px;color:var(--text);font-weight:600;margin-top:2px;}
 
-#tab-cotacoes .count-badge{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px 10px;font-size:11px;color:var(--text-mut);font-family:var(--font-mono);}
+#tab-cotacoes .count-badge, #tab-creditos .count-badge{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px 10px;font-size:11px;color:var(--text-mut);font-family:var(--font-mono);}
 
 #tab-cotacoes .cot-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:28px;}
 #tab-cotacoes .cot-tab-btn{background:transparent;border:1px solid transparent;border-bottom:none;color:var(--text-mut);border-radius:4px 4px 0 0;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body);letter-spacing:0.2px;margin-bottom:-1px;}
@@ -805,6 +841,21 @@ footer.appfoot{
 #tab-cotacoes .cot-tab-btn.active{color:var(--gold);border-color:var(--line);background:var(--surface);border-bottom:1px solid var(--surface);}
 #tab-cotacoes .cot-tab-panel{display:none;}
 #tab-cotacoes .cot-tab-panel.active{display:block;}
+
+/* Controle de Crédito */
+#tab-creditos .credito-toggle{background:none;border:none;color:var(--text-mut);cursor:pointer;font-size:13px;padding:2px 6px;}
+#tab-creditos .credito-toggle:hover{color:var(--text);}
+#tab-creditos tr.credito-detail-row{display:none;}
+#tab-creditos tr.credito-detail-row.open{display:table-row;}
+#tab-creditos tr.credito-detail-row td{background:var(--surface-2);padding:14px 16px;}
+#tab-creditos .vinculos-mini{width:100%;border-collapse:collapse;font-size:12px;}
+#tab-creditos .vinculos-mini th{text-align:left;color:var(--text-mut);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--line);text-transform:uppercase;font-size:10.5px;letter-spacing:0.4px;}
+#tab-creditos .vinculos-mini td{padding:6px 8px;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:12px;}
+#tab-creditos .vinculos-mini tr:last-child td{border-bottom:none;}
+#tab-creditos .saldo-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-family:var(--font-mono);font-weight:600;font-size:12px;}
+#tab-creditos .saldo-pill.pos{background:rgba(12,163,12,0.15);color:var(--teal);}
+#tab-creditos .saldo-pill.zero{background:rgba(92,101,112,0.2);color:var(--text-mut);}
+#tab-creditos .empty-mini{font-size:12px;color:var(--text-faint);padding:6px 8px;}
 
 </style>
 </head>
@@ -824,11 +875,16 @@ footer.appfoot{
   <div class="roadline"></div>
 
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="overview">Visão Geral &amp; KPIs</button>
-    <button class="tab-btn" data-tab="compradores">Solicitações por Comprador <span class="count-pill" id="countSolic">0</span></button>
-    <button class="tab-btn" data-tab="centros">Pedidos por Centro de Custo <span class="count-pill" id="countPed">0</span></button>
-    <button class="tab-btn" data-tab="cotacoes">Preço Insumos Críticos</button>
-    <button class="tab-btn" data-tab="prazoinsumos">Prazo de Insumos Críticos <span class="count-pill" id="countPrazoInsumos">0</span></button>
+    <div class="nav-group group-active" data-group="suprimentos">
+      <button class="tab-btn nav-group-btn active" data-tab="overview">Suprimentos <span class="nav-caret">▾</span></button>
+      <div class="nav-submenu">
+        <button class="tab-btn" data-tab="compradores">Solicitações por Comprador <span class="count-pill" id="countSolic">0</span></button>
+        <button class="tab-btn" data-tab="centros">Pedidos por Centro de Custo <span class="count-pill" id="countPed">0</span></button>
+      </div>
+    </div>
+    <button class="tab-btn" data-tab="prazoinsumos">Entrega Insumos Críticos <span class="count-pill" id="countPrazoInsumos">0</span></button>
+    <button class="tab-btn" data-tab="cotacoes">Cotação de Insumos Críticos</button>
+    <button class="tab-btn" data-tab="creditos">Controle de Crédito</button>
     <button class="tab-btn" data-tab="admin">🔐 Administração</button>
   </nav>
 
@@ -1035,69 +1091,11 @@ footer.appfoot{
 
 
   <div class="cot-tabs" role="tablist">
-    <button class="cot-tab-btn active" data-tab="config" role="tab">Configuração</button>
     <button class="cot-tab-btn" data-tab="dashboard" role="tab">Melhor preço e variação</button>
     <button class="cot-tab-btn" data-tab="lancamento" role="tab">Lançamento</button>
     <button class="cot-tab-btn" data-tab="registros" role="tab">Registros armazenados</button>
+    <button class="cot-tab-btn active" data-tab="config" role="tab">Configuração</button>
     <button class="cot-tab-btn admin-only" data-tab="importexport" role="tab">Importação e exportação</button>
-  </div>
-
-  <div class="cot-tab-panel active" data-tab-panel="config">
-  <div class="section">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">Agrupamento automático</div>
-        <h2>Classificação de insumos por tipo</h2>
-      </div>
-      <div class="toolbar">
-        <span class="count-badge" id="cot-tiposCountBadge">verificando...</span>
-        <button class="ghost" id="cot-btnToggleTipos">Minimizar</button>
-      </div>
-    </div>
-    <div id="cot-tiposContent">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th style="width:60%;">Insumo</th><th>Tipo</th></tr></thead>
-          <tbody id="cot-tiposBody"></tbody>
-        </table>
-      </div>
-      <div style="font-size:11.5px;color:var(--text-faint);margin-top:9px;line-height:1.5;">Este agrupamento usa a mesma classificação de "material crítico" definida logo abaixo, em "Classificação de insumo crítico" (editável por administradores). Insumos que não casam com nenhuma regra aparecem como "não classificado" e caem em "Sem classificação" no dashboard.</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-head">
-      <div>
-        <div class="eyebrow">Classificação editável</div>
-        <h2>Classificação de insumo crítico</h2>
-      </div>
-      <div class="toolbar">
-        <span class="count-badge" id="crit-countBadge">verificando...</span>
-        <button class="ghost" id="crit-btnToggle">Minimizar</button>
-      </div>
-    </div>
-    <div id="crit-content">
-      <p style="font-size:12px;color:var(--text-mut);margin:0 0 14px;max-width:680px;line-height:1.5;">Define quais insumos contam como <strong>material crítico</strong> na aba "Prazo de Insumos Críticos" e nos indicadores relacionados (ex.: CAP asfalto, Emulsão, Diesel). Uma regra casa quando a palavra-chave aparece na descrição ou no grupo do insumo (ignorando acentos e maiúsculas/minúsculas); a exceção, se preenchida, cancela o casamento — útil para falsos positivos (ex.: palavra-chave "CAP" com exceção "PVC", para não confundir CAP asfáltico com capa de PVC). Quando mais de uma regra casa, vence a de menor número na coluna "Ordem". Guardado no banco de dados (Supabase), compartilhado entre todos que acessam este painel.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Ordem</th><th>Palavra-chave</th><th>Exceção</th><th>Rótulo exibido</th><th class="admin-only"></th></tr></thead>
-          <tbody id="crit-tableBody"></tbody>
-        </table>
-      </div>
-      <div class="form-card admin-only" style="margin-top:14px;">
-        <div class="form-grid">
-          <div class="form-field"><label>Ordem</label><input type="number" id="crit-fOrdem" step="1" placeholder="0"></div>
-          <div class="form-field"><label>Palavra-chave</label><input type="text" id="crit-fPalavra" placeholder="Ex.: CAP"></div>
-          <div class="form-field"><label>Exceção (opcional)</label><input type="text" id="crit-fExcecao" placeholder="Ex.: PVC"></div>
-          <div class="form-field"><label>Rótulo exibido</label><input type="text" id="crit-fRotulo" placeholder="Ex.: CAP asfalto"></div>
-        </div>
-        <button class="primary" id="crit-btnAdd">Adicionar regra</button>
-        <span id="crit-formMsg" style="margin-left:10px;font-size:12px;color:var(--bad);"></span>
-      </div>
-      <div class="logged-non-admin-only" style="font-size:11.5px;color:var(--text-faint);margin-top:10px;">Somente administradores podem editar esta classificação.</div>
-      <div class="anon-only" style="font-size:11.5px;color:var(--text-faint);margin-top:10px;">Faça login como administrador (canto superior direito) para editar esta classificação.</div>
-    </div>
-  </div>
   </div>
 
   <div class="cot-tab-panel" data-tab-panel="dashboard">
@@ -1190,6 +1188,64 @@ footer.appfoot{
         </thead>
         <tbody id="cot-tableBody"></tbody>
       </table>
+    </div>
+  </div>
+  </div>
+
+  <div class="cot-tab-panel active" data-tab-panel="config">
+  <div class="section">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Agrupamento automático</div>
+        <h2>Classificação de insumos por tipo</h2>
+      </div>
+      <div class="toolbar">
+        <span class="count-badge" id="cot-tiposCountBadge">verificando...</span>
+        <button class="ghost" id="cot-btnToggleTipos">Minimizar</button>
+      </div>
+    </div>
+    <div id="cot-tiposContent">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:60%;">Insumo</th><th>Tipo</th></tr></thead>
+          <tbody id="cot-tiposBody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-faint);margin-top:9px;line-height:1.5;">Este agrupamento usa a mesma classificação de "material crítico" definida logo abaixo, em "Classificação de insumo crítico" (editável por administradores). Insumos que não casam com nenhuma regra aparecem como "não classificado" e caem em "Sem classificação" no dashboard.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Classificação editável</div>
+        <h2>Classificação de insumo crítico</h2>
+      </div>
+      <div class="toolbar">
+        <span class="count-badge" id="crit-countBadge">verificando...</span>
+        <button class="ghost" id="crit-btnToggle">Minimizar</button>
+      </div>
+    </div>
+    <div id="crit-content">
+      <p style="font-size:12px;color:var(--text-mut);margin:0 0 14px;max-width:680px;line-height:1.5;">Define quais insumos contam como <strong>material crítico</strong> na aba "Prazo de Insumos Críticos" e nos indicadores relacionados (ex.: CAP asfalto, Emulsão, Diesel). Uma regra casa quando a palavra-chave aparece na descrição ou no grupo do insumo (ignorando acentos e maiúsculas/minúsculas); a exceção, se preenchida, cancela o casamento — útil para falsos positivos (ex.: palavra-chave "CAP" com exceção "PVC", para não confundir CAP asfáltico com capa de PVC). Quando mais de uma regra casa, vence a de menor número na coluna "Ordem". Guardado no banco de dados (Supabase), compartilhado entre todos que acessam este painel.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ordem</th><th>Palavra-chave</th><th>Exceção</th><th>Rótulo exibido</th><th class="admin-only"></th></tr></thead>
+          <tbody id="crit-tableBody"></tbody>
+        </table>
+      </div>
+      <div class="form-card admin-only" style="margin-top:14px;">
+        <div class="form-grid">
+          <div class="form-field"><label>Ordem</label><input type="number" id="crit-fOrdem" step="1" placeholder="0"></div>
+          <div class="form-field"><label>Palavra-chave</label><input type="text" id="crit-fPalavra" placeholder="Ex.: CAP"></div>
+          <div class="form-field"><label>Exceção (opcional)</label><input type="text" id="crit-fExcecao" placeholder="Ex.: PVC"></div>
+          <div class="form-field"><label>Rótulo exibido</label><input type="text" id="crit-fRotulo" placeholder="Ex.: CAP asfalto"></div>
+        </div>
+        <button class="primary" id="crit-btnAdd">Adicionar regra</button>
+        <span id="crit-formMsg" style="margin-left:10px;font-size:12px;color:var(--bad);"></span>
+      </div>
+      <div class="logged-non-admin-only" style="font-size:11.5px;color:var(--text-faint);margin-top:10px;">Somente administradores podem editar esta classificação.</div>
+      <div class="anon-only" style="font-size:11.5px;color:var(--text-faint);margin-top:10px;">Faça login como administrador (canto superior direito) para editar esta classificação.</div>
     </div>
   </div>
   </div>
@@ -1338,6 +1394,90 @@ footer.appfoot{
       </div>
     </div>
     <div class="view-panel" data-view-panel="tabela" id="piViewTabela"></div>
+  </section>
+
+  <!-- ===================== CONTROLE DE CRÉDITO ===================== -->
+  <section class="tab-panel" id="tab-creditos">
+    <div class="kpi-grid" id="creditoKpiGrid"></div>
+
+    <div class="filters-bar">
+      <div class="field">
+        <label>Empresa / Obra</label>
+        <select id="fCreditoObra"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label>Saldo</label>
+        <select id="fCreditoSaldo">
+          <option value="">Todos</option>
+          <option value="com-saldo">Com saldo disponível</option>
+          <option value="zerado">Sem saldo (zerado)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section gestor-credito-only">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Novo lançamento</div>
+          <h2>Lançar crédito</h2>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-field"><label>Empresa / Obra</label><input type="text" id="credito-fObra" placeholder="Ex.: 203 - Contrato 1 - ES-162 - Lote 1 - Capixaba" list="credito-dlObra"></div>
+          <div class="form-field"><label>Valor do crédito (R$)</label><input type="number" id="credito-fValor" step="0.01" min="0" placeholder="0,00"></div>
+          <div class="form-field"><label>Data de disponibilidade</label><input type="date" id="credito-fData"></div>
+          <div class="form-field"><label>Descrição</label><input type="text" id="credito-fDescricao" placeholder="Ex.: Crédito por devolução de material"></div>
+        </div>
+        <datalist id="credito-dlObra"></datalist>
+        <button class="primary" id="credito-btnAdd">Lançar crédito</button>
+        <span id="credito-formMsg" style="margin-left:10px;font-size:12px;color:var(--bad);"></span>
+      </div>
+    </div>
+    <div class="logged-non-gestor-only" style="font-size:11.5px;color:var(--text-faint);margin:-10px 0 24px;">Somente administradores e supervisores podem lançar crédito ou vincular pedidos.</div>
+    <div class="anon-only" style="font-size:11.5px;color:var(--text-faint);margin:-10px 0 24px;">Faça login (canto superior direito) para ver os detalhes de créditos e, se for administrador ou supervisor, lançar novos créditos.</div>
+
+    <div class="section gestor-credito-only">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Abatimento</div>
+          <h2>Vincular pedido de compra a um crédito</h2>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-field"><label>Crédito</label><select id="vinculo-fCredito"></select></div>
+          <div class="form-field"><label>Pedido de compra</label><input type="text" id="vinculo-fPedido" placeholder="Digite ou selecione o nº do pedido" list="vinculo-dlPedido"></div>
+          <div class="form-field"><label>Valor a abater (R$)</label><input type="number" id="vinculo-fValor" step="0.01" min="0" placeholder="0,00"></div>
+          <div class="form-field"><label>Data do vínculo</label><input type="date" id="vinculo-fData"></div>
+          <div class="form-field"><label>Observação (opcional)</label><input type="text" id="vinculo-fObs" placeholder="Ex.: referente à NF 12345"></div>
+        </div>
+        <datalist id="vinculo-dlPedido"></datalist>
+        <div style="font-size:11.5px;color:var(--text-faint);margin-bottom:12px;">O pedido de compra é o mesmo importado do Sienge no Painel de Suprimentos — não existe valor monetário do pedido nessa base, por isso o valor a abater é digitado manualmente por quem faz o vínculo.</div>
+        <button class="primary" id="vinculo-btnAdd">Vincular</button>
+        <span id="vinculo-formMsg" style="margin-left:10px;font-size:12px;color:var(--bad);"></span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Base completa</div>
+          <h2>Créditos lançados</h2>
+        </div>
+        <div class="toolbar">
+          <span class="count-badge" id="creditoCountBadge">0 créditos</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th></th><th>Empresa / Obra</th><th>Valor total</th><th>Abatido</th><th>Saldo</th><th>Disponível a partir de</th><th>Descrição</th><th></th></tr>
+          </thead>
+          <tbody id="creditoTableBody"></tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== ADMINISTRAÇÃO ===================== -->
@@ -2656,6 +2796,19 @@ function populateFilterOptions(){
   const piFornecedores = uniqueSorted(criticosRows.map(r=>normLabel(r.fornecedor)));
   const selPiFornecedor = document.getElementById('fPiFornecedor');
   if(selPiFornecedor) selPiFornecedor.innerHTML = '<option value="">Todos</option>' + piFornecedores.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+  // Opções de material crítico: geradas a partir da classificação atual
+  // (window.CRITICOS_RULES), não mais fixas em "CAP asfalto/Emulsão/Diesel" —
+  // assim continuam batendo mesmo depois que um administrador editar/renomear
+  // os rótulos na aba "Preço Insumos Críticos → Classificação de insumo crítico".
+  const materiaisAtuais = getCriticalMaterialLabels();
+  const materiaisOptions = materiaisAtuais.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  const selSolicMaterial = document.getElementById('fSolicMaterial');
+  if(selSolicMaterial) selSolicMaterial.innerHTML = '<option value="">Todos</option><option value="critico">Somente críticos</option>' + materiaisOptions;
+  const selPedMaterial = document.getElementById('fPedMaterial');
+  if(selPedMaterial) selPedMaterial.innerHTML = '<option value="">Todos</option><option value="critico">Somente críticos</option>' + materiaisOptions;
+  const selPiMaterial = document.getElementById('fPiMaterial');
+  if(selPiMaterial) selPiMaterial.innerHTML = '<option value="">Todos os críticos</option>' + materiaisOptions;
 }
 
 /* ============================================================
@@ -2832,7 +2985,7 @@ function renderOverview(){
   });
 
   // Chart 5 — materiais criticos stacked por tipo x status
-  const materiais = ['CAP asfalto','EMULSÃO','DIESEL'];
+  const materiais = getCriticalMaterialLabels();
   const statusKeys = ['dentro','hoje','atrasado','sem-data'];
   const stackData = {};
   statusKeys.forEach(s=>stackData[s]=materiais.map(m=>criticosPend.filter(r=>r.materialCritico===m && r.pedidoPrazoStatus===s).length));
@@ -3223,7 +3376,23 @@ function renderCentros(){
    9-B. RENDER: PRAZO DE ENTREGA — INSUMOS CRÍTICOS
    (aba dinâmica com várias formas de visualização + modo apresentação)
    ============================================================ */
-const MATERIAL_COLORS = {'CAP asfalto':'#F5C433','EMULSÃO':'#4C8DFF','DIESEL':'#2FBF9F'};
+// Antes, os gráficos de material crítico comparavam com uma lista fixa
+// ['CAP asfalto','EMULSÃO','DIESEL']. Como a classificação virou editável
+// pelo administrador (window.CRITICOS_RULES, rótulo livre), essa lista podia
+// não bater mais com os rótulos reais (ex.: acento/maiúscula diferente, ou
+// um rótulo novo/renomeado) e os gráficos ficavam sem dados mesmo com a
+// classificação funcionando normalmente no restante do painel. Agora os
+// rótulos usados nos gráficos vêm sempre da mesma fonte da classificação.
+const MATERIAL_COLOR_PALETTE = ['#F5C433','#4C8DFF','#2FBF9F','#D03B3B','#9B6BFF','#FF8A3D','#3DDC97','#E0507B'];
+function getCriticalMaterialLabels(){
+  const fromRules = [];
+  (window.CRITICOS_RULES||[]).forEach(r=>{ if(r.rotulo && !fromRules.includes(r.rotulo)) fromRules.push(r.rotulo); });
+  return fromRules.length ? fromRules : ['CAP asfalto','EMULSÃO','DIESEL'];
+}
+function materialColor(label){
+  const idx = getCriticalMaterialLabels().indexOf(label);
+  return MATERIAL_COLOR_PALETTE[idx>=0 ? idx % MATERIAL_COLOR_PALETTE.length : 0];
+}
 let lastPiItems = [];
 let piCalMonth = null; // {y,m} mês exibido no calendário; null = mês atual
 
@@ -3510,14 +3679,14 @@ function renderPiCharts(items){
   const elStatus = document.getElementById('chartPiStatus');
   if(!elObra || !elStatus) return;
 
-  const materiais = ['CAP asfalto','EMULSÃO','DIESEL'];
+  const materiais = getCriticalMaterialLabels();
   const obras = uniqueSorted(items.map(i=>i.obra));
   const dataByMat = {};
   materiais.forEach(m=>{ dataByMat[m] = obras.map(o=>items.filter(i=>i.obra===o && i.material===m).reduce((s,i)=>s+(i.qtd||0),0)); });
 
   charts.piObra = new Chart(elObra, {
     type:'bar',
-    data:{ labels:obras, datasets: materiais.map(m=>({label:m, data:dataByMat[m], backgroundColor:MATERIAL_COLORS[m], stack:'s'})) },
+    data:{ labels:obras, datasets: materiais.map(m=>({label:m, data:dataByMat[m], backgroundColor:materialColor(m), stack:'s'})) },
     options:{
       responsive:true, maintainAspectRatio:false,
       scales:{ x:{stacked:true, ticks:{color:TICK_COLOR}, grid:{color:GRID_COLOR}}, y:{stacked:true, ticks:{color:TICK_COLOR}, grid:{color:GRID_COLOR}} },
@@ -3611,18 +3780,41 @@ document.addEventListener('keydown', e=>{
 
 wireLampFilter('lampFilterPi','fPiPrazo',renderPrazoInsumos);
 
-function renderAll(){ renderOverview(); renderCompradores(); renderCentros(); renderPrazoInsumos(); }
+function renderAll(){ renderOverview(); renderCompradores(); renderCentros(); renderPrazoInsumos(); if(typeof renderCreditos==='function') renderCreditos(); }
 
 /* ============================================================
    10. TABS + FILTER BINDINGS
    ============================================================ */
+var navTabGroupMap = {
+  overview:'suprimentos', compradores:'suprimentos', centros:'suprimentos'
+};
 document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
+  btn.addEventListener('click', (ev)=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('tab-'+btn.getAttribute('data-tab')).classList.add('active');
+    var targetTab = btn.getAttribute('data-tab');
+    document.getElementById('tab-'+targetTab).classList.add('active');
+
+    var groupName = navTabGroupMap[targetTab];
+    document.querySelectorAll('.nav-group').forEach(function(g){
+      g.classList.toggle('group-active', g.getAttribute('data-group') === groupName);
+    });
+
+    if(btn.classList.contains('nav-group-btn')){
+      var parentGroup = btn.closest('.nav-group');
+      var wasOpen = parentGroup.classList.contains('open');
+      document.querySelectorAll('.nav-group').forEach(function(g){ g.classList.remove('open'); });
+      if(!wasOpen){ parentGroup.classList.add('open'); ev.stopPropagation(); }
+    } else {
+      document.querySelectorAll('.nav-group').forEach(function(g){ g.classList.remove('open'); });
+    }
   });
+});
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.nav-group')){
+    document.querySelectorAll('.nav-group').forEach(function(g){ g.classList.remove('open'); });
+  }
 });
 ['fSolicComprador','fSolicCentro','fSolicPrazo','fSolicMaterial','fSolicSearch'].forEach(id=>{
   document.getElementById(id).addEventListener('input', renderCompradores);
@@ -4609,9 +4801,331 @@ async function addRecord(){
   renderAll();
 }
 
+/* ============================================================
+   CONTROLE DE CRÉDITO (créditos por empresa/obra, abatidos por
+   pedido de compra vinculado). Duas tabelas no Supabase:
+   "creditos_obra" (lançamento) e "creditos_vinculos" (cada pedido
+   de compra vinculado a um crédito, com o valor abatido).
+   Lançar crédito e vincular pedido são restritos a administradores
+   e supervisores (perfis.is_admin ou perfis.is_supervisor);
+   excluir continua só para administradores, como as demais tabelas
+   deste painel. A base do Sienge usada aqui não tem valor
+   monetário do pedido (só quantidades), então o valor a abater é
+   digitado manualmente por quem faz o vínculo — validado apenas
+   contra o saldo disponível do crédito selecionado.
+   ============================================================ */
+let creditos = [];
+let vinculosCredito = [];
+const creditoDetailOpen = new Set();
+
+function creditoRowFromDb(row){
+  return {
+    id: row.id,
+    obra: row.obra,
+    valorTotal: Number(row.valor_total)||0,
+    dataDisponibilidade: row.data_disponibilidade,
+    descricao: row.descricao || '',
+    criadoEm: row.criado_em
+  };
+}
+function vinculoRowFromDb(row){
+  return {
+    id: row.id,
+    creditoId: row.credito_id,
+    numPedido: row.num_pedido,
+    obraPedido: row.obra_pedido || '',
+    fornecedor: row.fornecedor || '',
+    comprador: row.comprador || '',
+    valorAbatido: Number(row.valor_abatido)||0,
+    dataVinculo: row.data_vinculo,
+    observacao: row.observacao || ''
+  };
+}
+
+async function loadCreditos(){
+  try{
+    const { data, error } = await window.SB.from('creditos_obra').select('*').order('criado_em', { ascending:false });
+    if(error) throw error;
+    creditos = (data||[]).map(creditoRowFromDb);
+  }catch(e){
+    console.error('Falha ao carregar créditos (é preciso estar logado para ver esta aba):', e);
+    creditos = [];
+  }
+}
+async function loadVinculosCredito(){
+  try{
+    const { data, error } = await window.SB.from('creditos_vinculos').select('*').order('data_vinculo', { ascending:false });
+    if(error) throw error;
+    vinculosCredito = (data||[]).map(vinculoRowFromDb);
+  }catch(e){
+    console.error('Falha ao carregar vínculos de crédito:', e);
+    vinculosCredito = [];
+  }
+}
+async function insertCredito(c){
+  try{
+    const { error } = await window.SB.from('creditos_obra').insert({
+      obra: c.obra, valor_total: c.valorTotal, data_disponibilidade: c.dataDisponibilidade, descricao: c.descricao || null
+    });
+    if(error) throw error;
+    return true;
+  }catch(e){
+    console.error('Falha ao lançar crédito:', e);
+    alert('Não foi possível lançar o crédito. Verifique se você está logado como administrador ou supervisor.');
+    return false;
+  }
+}
+async function deleteCredito(id){
+  if(!confirm('Excluir este crédito e todos os vínculos de pedidos associados a ele?')) return false;
+  try{
+    const { error } = await window.SB.from('creditos_obra').delete().eq('id', id);
+    if(error) throw error;
+    return true;
+  }catch(e){
+    console.error('Falha ao excluir crédito:', e);
+    alert('Não foi possível excluir — apenas administradores podem excluir créditos.');
+    return false;
+  }
+}
+async function insertVinculoCredito(v){
+  try{
+    const { error } = await window.SB.from('creditos_vinculos').insert({
+      credito_id: v.creditoId, num_pedido: v.numPedido, obra_pedido: v.obraPedido || null,
+      fornecedor: v.fornecedor || null, comprador: v.comprador || null,
+      valor_abatido: v.valorAbatido, data_vinculo: v.dataVinculo, observacao: v.observacao || null
+    });
+    if(error) throw error;
+    return true;
+  }catch(e){
+    console.error('Falha ao vincular pedido ao crédito:', e);
+    alert('Não foi possível vincular o pedido. Verifique se você está logado como administrador ou supervisor.');
+    return false;
+  }
+}
+async function deleteVinculoCredito(id){
+  if(!confirm('Remover este vínculo? O valor deixa de ser abatido do crédito.')) return false;
+  try{
+    const { error } = await window.SB.from('creditos_vinculos').delete().eq('id', id);
+    if(error) throw error;
+    return true;
+  }catch(e){
+    console.error('Falha ao remover vínculo:', e);
+    alert('Não foi possível remover — apenas administradores podem remover vínculos.');
+    return false;
+  }
+}
+
+function vinculosDoCredito(creditoId){
+  return vinculosCredito.filter(v=>String(v.creditoId)===String(creditoId));
+}
+function creditoAbatido(creditoId){
+  return vinculosDoCredito(creditoId).reduce((s,v)=>s+v.valorAbatido,0);
+}
+function creditoSaldo(c){
+  return c.valorTotal - creditoAbatido(c.id);
+}
+
+// Lista de pedidos de compra únicos, a partir da MESMA base do Sienge já
+// importada no Painel de Suprimentos (state.rows) — não existe cadastro de
+// pedidos separado para o Controle de Crédito.
+function getPedidosUnicos(){
+  const map = new Map();
+  (state.rows||[]).forEach(r=>{
+    if(!r.numPedido) return;
+    if(!map.has(r.numPedido)){
+      map.set(r.numPedido, { numPedido:r.numPedido, obra:r.obraLabel, fornecedor: normLabel(r.fornecedor)||'', comprador:r.compradorLabel||'' });
+    }
+  });
+  return [...map.values()].sort((a,b)=>String(a.numPedido).localeCompare(String(b.numPedido),'pt-BR',{numeric:true}));
+}
+
+function populateCreditoDatalists(){
+  const dlObra = document.getElementById('credito-dlObra');
+  if(dlObra) dlObra.innerHTML = uniqueSorted((state.rows||[]).map(r=>r.obraLabel)).map(o=>`<option value="${esc(o)}">`).join('');
+
+  const dlPedido = document.getElementById('vinculo-dlPedido');
+  if(dlPedido) dlPedido.innerHTML = getPedidosUnicos().map(p=>`<option value="${esc(p.numPedido)}">${esc(p.numPedido)} — ${esc(p.obra)} — ${esc(p.fornecedor)}</option>`).join('');
+
+  const fObra = document.getElementById('fCreditoObra');
+  if(fObra){
+    const atual = fObra.value;
+    fObra.innerHTML = '<option value="">Todas</option>' + uniqueSorted(creditos.map(c=>c.obra)).map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+    if([...fObra.options].some(o=>o.value===atual)) fObra.value = atual;
+  }
+
+  const selCredito = document.getElementById('vinculo-fCredito');
+  if(selCredito){
+    const atual = selCredito.value;
+    const comSaldo = creditos.filter(c=>creditoSaldo(c) > 0.005);
+    selCredito.innerHTML = comSaldo.length
+      ? comSaldo.map(c=>`<option value="${c.id}">${esc(c.obra)} — saldo R$ ${fmtMoney(creditoSaldo(c))}</option>`).join('')
+      : '<option value="">Nenhum crédito com saldo disponível</option>';
+    if([...selCredito.options].some(o=>o.value===atual)) selCredito.value = atual;
+  }
+}
+
+function toggleCreditoDetail(id){
+  if(creditoDetailOpen.has(id)) creditoDetailOpen.delete(id); else creditoDetailOpen.add(id);
+  renderCreditos();
+}
+
+function renderCreditoKpis(obraFiltro){
+  const lista = obraFiltro ? creditos.filter(c=>c.obra===obraFiltro) : creditos;
+  const totalLancado = lista.reduce((s,c)=>s+c.valorTotal,0);
+  const totalAbatido = lista.reduce((s,c)=>s+creditoAbatido(c.id),0);
+  const saldoDisponivel = totalLancado - totalAbatido;
+  const grid = document.getElementById('creditoKpiGrid');
+  if(!grid) return;
+  const totalVinculos = vinculosCredito.filter(v=>lista.some(c=>String(c.id)===String(v.creditoId))).length;
+  grid.innerHTML = `
+    <div class="kpi-card c-total"><p class="kpi-label">Total lançado</p><div class="kpi-value">R$ ${fmtMoney(totalLancado)}</div><p class="kpi-foot">${lista.length} crédito(s)</p></div>
+    <div class="kpi-card c-ped"><p class="kpi-label">Total abatido</p><div class="kpi-value">R$ ${fmtMoney(totalAbatido)}</div><p class="kpi-foot">${totalVinculos} vínculo(s)</p></div>
+    <div class="kpi-card c-crit"><p class="kpi-label">Saldo disponível</p><div class="kpi-value">R$ ${fmtMoney(saldoDisponivel)}</div><p class="kpi-foot">${lista.filter(c=>creditoSaldo(c)>0.005).length} com saldo</p></div>
+  `;
+}
+
+function renderCreditos(){
+  if(!document.getElementById('tab-creditos')) return;
+  populateCreditoDatalists();
+
+  const fObraEl = document.getElementById('fCreditoObra');
+  const fSaldoEl = document.getElementById('fCreditoSaldo');
+  const fObra = fObraEl ? fObraEl.value : '';
+  const fSaldo = fSaldoEl ? fSaldoEl.value : '';
+  renderCreditoKpis(fObra);
+
+  let lista = creditos.slice();
+  if(fObra) lista = lista.filter(c=>c.obra===fObra);
+  if(fSaldo==='com-saldo') lista = lista.filter(c=>creditoSaldo(c) > 0.005);
+  else if(fSaldo==='zerado') lista = lista.filter(c=>creditoSaldo(c) <= 0.005);
+
+  const badge = document.getElementById('creditoCountBadge');
+  if(badge) badge.textContent = `${lista.length} crédito(s)`;
+
+  const tbody = document.getElementById('creditoTableBody');
+  if(!tbody) return;
+  if(!lista.length){
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-faint);padding:24px;">Nenhum crédito lançado${fObra||fSaldo?' com esse filtro':''}.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  lista.forEach(c=>{
+    const abatido = creditoAbatido(c.id);
+    const saldo = c.valorTotal - abatido;
+    const isOpen = creditoDetailOpen.has(c.id);
+    const vinculos = vinculosDoCredito(c.id);
+    html += `<tr>
+      <td><button class="credito-toggle" data-toggle="${c.id}">${isOpen?'▾':'▸'}</button></td>
+      <td class="txt">${esc(c.obra)}</td>
+      <td>R$ ${fmtMoney(c.valorTotal)}</td>
+      <td>R$ ${fmtMoney(abatido)}</td>
+      <td><span class="saldo-pill ${saldo>0.005?'pos':'zero'}">R$ ${fmtMoney(saldo)}</span></td>
+      <td>${c.dataDisponibilidade?fmtBRDate(c.dataDisponibilidade):'—'}</td>
+      <td class="txt">${esc(c.descricao)||'—'}</td>
+      <td><button class="danger admin-only" data-del-credito="${c.id}">Excluir</button></td>
+    </tr>
+    <tr class="credito-detail-row ${isOpen?'open':''}"><td colspan="8">
+      ${vinculos.length ? `<table class="vinculos-mini"><thead><tr>
+          <th>Pedido</th><th>Obra</th><th>Fornecedor</th><th>Valor abatido</th><th>Data</th><th>Observação</th><th></th>
+        </tr></thead><tbody>
+        ${vinculos.map(v=>`<tr>
+          <td>${esc(v.numPedido)}</td>
+          <td class="txt">${esc(v.obraPedido)}</td>
+          <td class="txt">${esc(v.fornecedor)}</td>
+          <td>R$ ${fmtMoney(v.valorAbatido)}</td>
+          <td>${v.dataVinculo?fmtBRDate(v.dataVinculo):'—'}</td>
+          <td class="txt">${esc(v.observacao)||'—'}</td>
+          <td><button class="credito-toggle admin-only" data-del-vinculo="${v.id}" title="Remover vínculo">✕</button></td>
+        </tr>`).join('')}
+        </tbody></table>`
+        : `<div class="empty-mini">Nenhum pedido vinculado a este crédito ainda.</div>`}
+    </td></tr>`;
+  });
+  tbody.innerHTML = html;
+
+  tbody.querySelectorAll('[data-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=> toggleCreditoDetail(btn.getAttribute('data-toggle')));
+  });
+  tbody.querySelectorAll('[data-del-credito]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const ok = await deleteCredito(btn.getAttribute('data-del-credito'));
+      if(ok){ await loadCreditos(); await loadVinculosCredito(); renderCreditos(); }
+    });
+  });
+  tbody.querySelectorAll('[data-del-vinculo]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const ok = await deleteVinculoCredito(btn.getAttribute('data-del-vinculo'));
+      if(ok){ await loadVinculosCredito(); renderCreditos(); }
+    });
+  });
+}
+
+async function addCredito(){
+  const msg = document.getElementById('credito-formMsg');
+  msg.textContent = '';
+  const obra = document.getElementById('credito-fObra').value.trim();
+  const valor = parseFloat(document.getElementById('credito-fValor').value);
+  const data = document.getElementById('credito-fData').value;
+  const descricao = document.getElementById('credito-fDescricao').value.trim();
+  if(!obra || !valor || valor<=0 || !data){
+    msg.textContent = 'Preencha empresa/obra, valor (maior que zero) e data de disponibilidade.';
+    return;
+  }
+  const ok = await insertCredito({ obra, valorTotal: valor, dataDisponibilidade: data, descricao });
+  if(ok){
+    document.getElementById('credito-fObra').value = '';
+    document.getElementById('credito-fValor').value = '';
+    document.getElementById('credito-fDescricao').value = '';
+    await loadCreditos();
+    renderCreditos();
+  }
+}
+
+async function addVinculoCredito(){
+  const msg = document.getElementById('vinculo-formMsg');
+  msg.textContent = '';
+  const creditoId = document.getElementById('vinculo-fCredito').value;
+  const numPedido = document.getElementById('vinculo-fPedido').value.trim();
+  const valor = parseFloat(document.getElementById('vinculo-fValor').value);
+  const data = document.getElementById('vinculo-fData').value;
+  const obs = document.getElementById('vinculo-fObs').value.trim();
+
+  if(!creditoId){ msg.textContent = 'Selecione um crédito com saldo disponível.'; return; }
+  if(!numPedido){ msg.textContent = 'Informe o número do pedido de compra.'; return; }
+  if(!valor || valor<=0){ msg.textContent = 'Informe o valor a abater (maior que zero).'; return; }
+  if(!data){ msg.textContent = 'Informe a data do vínculo.'; return; }
+
+  const credito = creditos.find(c=>String(c.id)===String(creditoId));
+  if(credito){
+    const saldo = creditoSaldo(credito);
+    if(valor > saldo + 0.005){
+      msg.textContent = `Valor maior que o saldo disponível (R$ ${fmtMoney(saldo)}).`;
+      return;
+    }
+  }
+
+  const pedido = getPedidosUnicos().find(p=>p.numPedido===numPedido);
+
+  const ok = await insertVinculoCredito({
+    creditoId, numPedido,
+    obraPedido: pedido?pedido.obra:'', fornecedor: pedido?pedido.fornecedor:'', comprador: pedido?pedido.comprador:'',
+    valorAbatido: valor, dataVinculo: data, observacao: obs
+  });
+  if(ok){
+    document.getElementById('vinculo-fPedido').value = '';
+    document.getElementById('vinculo-fValor').value = '';
+    document.getElementById('vinculo-fObs').value = '';
+    await loadVinculosCredito();
+    renderCreditos();
+  }
+}
+
 async function init(){
   document.getElementById('cot-dashDate').value = todayISO();
   document.getElementById('cot-fData').value = todayISO();
+  document.getElementById('credito-fData').value = todayISO();
+  document.getElementById('vinculo-fData').value = todayISO();
 
   await loadData();
   await loadTipos();
@@ -4619,7 +5133,10 @@ async function init(){
   await window.loadCriticosRules();
   await loadCriticosColapso();
   await loadAbaAtiva();
+  await loadCreditos();
+  await loadVinculosCredito();
   renderAll();
+  renderCreditos();
   applyTiposColapso();
   applyCriticosColapso();
   setActiveTab(abaAtiva);
@@ -4630,6 +5147,11 @@ async function init(){
   document.querySelectorAll('.cot-tab-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> goToTab(btn.getAttribute('data-tab')));
   });
+
+  document.getElementById('credito-btnAdd').addEventListener('click', addCredito);
+  document.getElementById('vinculo-btnAdd').addEventListener('click', addVinculoCredito);
+  document.getElementById('fCreditoObra').addEventListener('change', renderCreditos);
+  document.getElementById('fCreditoSaldo').addEventListener('change', renderCreditos);
 
   document.getElementById('cot-btnHoje').addEventListener('click', ()=>{
     document.getElementById('cot-dashDate').value = todayISO();
@@ -4671,21 +5193,26 @@ init();
       authLoggedOut.style.display = 'none';
       authLoggedIn.style.display = 'flex';
       let isAdmin = false;
+      let isSupervisor = false;
       let nome = session.user.email;
       try{
-        const { data: perfil } = await window.SB.from('perfis').select('nome,is_admin').eq('id', session.user.id).single();
+        const { data: perfil } = await window.SB.from('perfis').select('nome,is_admin,is_supervisor').eq('id', session.user.id).single();
         if(perfil){
           isAdmin = !!perfil.is_admin;
+          isSupervisor = !!perfil.is_supervisor;
           if(perfil.nome) nome = perfil.nome;
         } else {
-          await window.SB.from('perfis').insert({ id: session.user.id, nome: session.user.email, is_admin: false });
+          await window.SB.from('perfis').insert({ id: session.user.id, nome: session.user.email, is_admin: false, is_supervisor: false });
         }
-      }catch(e){ /* tabela perfis pode não ter linha ainda; segue sem admin */ }
+      }catch(e){ /* tabela perfis pode não ter linha ainda; segue sem admin/supervisor */ }
       document.body.classList.toggle('is-admin', isAdmin);
-      authWhoAmI.textContent = `${nome}${isAdmin ? ' (admin)' : ''}`;
+      document.body.classList.toggle('is-supervisor', isSupervisor);
+      const papel = isAdmin ? ' (admin)' : (isSupervisor ? ' (supervisor)' : '');
+      authWhoAmI.textContent = `${nome}${papel}`;
     } else {
       document.body.classList.remove('is-logged');
       document.body.classList.remove('is-admin');
+      document.body.classList.remove('is-supervisor');
       authLoggedOut.style.display = 'flex';
       authLoggedIn.style.display = 'none';
     }
